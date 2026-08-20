@@ -1,19 +1,19 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    POSTGRES_USER: str = "developeer@gmail.com"
-    POSTGRES_PASSWORD: str = "avalon12"
-    POSTGRES_DB: str = "contacts_db"
-    POSTGRES_PORT: int = 5432
-    SECRET_KEY: str = "super_secret_key"
-    ALGORITHM: str = "HS256"
-    CLOUDINARY_NAME: str = "milmy1gs"
-    CLOUDINARY_API_KEY: str = "456846788827515"
-    CLOUDINARY_API_SECRET: str = "bfnr2Nhb71D2bztBFMEdpnwnGP8"
-    REDIS_HOST: str = "localhost"
-    REDIS_PORT: int = 6379
+    sqlalchemy_database_url: str
+    secret_key: str
+    algorithm: str = "HS256"
+    mail_username: str
+    mail_password: str
+    mail_from: str
+    mail_port: int
+    mail_server: str
+    cloudinary_name: str
+    cloudinary_api_key: str
+    cloudinary_api_secret: str
 
-    class Config:
-        env_file = None
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 settings = Settings()
+

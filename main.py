@@ -25,7 +25,6 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Contacts API Secure")
 
-# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

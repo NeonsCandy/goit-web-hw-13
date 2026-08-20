@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Date, Text, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -8,7 +8,8 @@ class User(Base):
     email = Column(String(150), unique=True, index=True)
     password = Column(String(255))
     refresh_token = Column(String(255), nullable=True)
-    avatar = Column(String(255), nullable=True) # НОВЕ ПОЛЕ
+    avatar = Column(String(255), nullable=True) 
+    confirmed = Column(Boolean, default=False)
 
 class Contact(Base):
     __tablename__ = "contacts"
