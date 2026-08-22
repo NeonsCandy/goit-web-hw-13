@@ -5,23 +5,23 @@ services:
     container_name: hw13-postgres
     restart: always
     environment:
-      POSTGRES_USER: developeer@gmail.com
-      POSTGRES_PASSWORD: avalon12
-      POSTGRES_DB: contacts_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
 
-web:
+  web:
     build: .
     ports:
       - "8000:8000"
     env_file:
       - .env
     depends_on:
-      - db
+      - postgres
       
 volumes:
   postgres_data:

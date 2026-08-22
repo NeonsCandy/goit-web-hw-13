@@ -1,5 +1,4 @@
 from fastapi import FastAPI, Depends, HTTPException, Query, status, Request, UploadFile, File
-from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -12,10 +11,12 @@ from database import engine, get_db, Base
 from config import settings
 import models, schemas, crud, auth
 
+from services.email_service import send_email
+
 cloudinary.config(
-    cloud_name=settings.CLOUDINARY_NAME,
-    api_key=settings.CLOUDINARY_API_KEY,
-    api_secret=settings.CLOUDINARY_API_SECRET,
+    cloud_name=settings.cloudinary_name,
+    api_key=settings.cloudinary_api_key,
+    api_secret=settings.cloudinary_api_secret,
     secure=True
 )
 
@@ -24,6 +25,9 @@ limiter = Limiter(key_func=get_remote_address)
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Contacts API Secure")
+
+
+app.include_router(auth.router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -38,16 +42,20 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
 @app.post("/auth/signup", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
-def signup(body: schemas.UserModel, db: Session = Depends(get_db)):
+async def signup(request: Request, body: schemas.UserModel, db: Session = Depends(get_db)):
     exist_user = crud.get_user_by_email(db, email=body.email)
     if exist_user:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Account already exists")
     new_user = crud.create_user(db, body)
+    
+   
+    await send_email(new_user.email, new_user.email, request.base_url)
+    
     return new_user
 
 @app.post("/auth/login", response_model=schemas.TokenModel)
-def login(body: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = crud.get_user_by_email(db, email=body.username)
+def login(body: schemas.UserModel, db: Session = Depends(get_db)):
+    user = crud.get_user_by_email(db, email=body.email)
     if user is None or not auth.verify_password(body.password, user.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
     
@@ -78,6 +86,20 @@ def read_contacts(name: str = Query(None), surname: str = Query(None), email: st
 @app.get("/contacts/{contact_id}", response_model=schemas.ContactResponse)
 def read_contact(contact_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     contact = crud.get_contact_by_id(db, contact_id=contact_id, user_id=current_user.id)
+    if contact is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Contact not found")
+    return contact
+
+@app.put("/contacts/{contact_id}", response_model=schemas.ContactResponse)
+def update_contact(contact_id: int, body: schemas.ContactCreate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    contact = crud.update_contact(db=db, contact_id=contact_id, contact=body, user_id=current_user.id)
+    if contact is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Contact not found")
+    return contact
+
+@app.delete("/contacts/{contact_id}", response_model=schemas.ContactResponse)
+def remove_contact(contact_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    contact = crud.delete_contact(db=db, contact_id=contact_id, user_id=current_user.id)
     if contact is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Contact not found")
     return contact

@@ -52,9 +52,6 @@ def delete_contact(db: Session, contact_id: int, user_id: int):
         db.commit()
     return db_contact
 
-def get_upcoming_birthdays(db: Session, user_id: int):
-    contacts = db.query(models.Contact).filter(models.Contact.user_id == user_id).all()
-
 def get_upcoming_birthdays(db: Session):
     contacts = db.query(models.Contact).all()
     today = date.today()

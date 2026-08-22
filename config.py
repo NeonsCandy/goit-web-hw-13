@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+import cloudinary
 
 class Settings(BaseSettings):
     sqlalchemy_database_url: str
